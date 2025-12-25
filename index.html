@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATA Extended Lookup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        dark: {
+                            900: '#06080C',
+                            800: '#0A0D12',
+                            700: '#0E1318',
+                            600: '#141A22',
+                            500: '#1A222D',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        /* Dark Theme (Default) */
+        .dark body {
+            background-color: #06080C;
+            color: #E2E8F0;
+        }
+
+        .dark ::-webkit-scrollbar-track {
+            background: #06080C;
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: #1E293B;
+        }
+
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+
+        /* Light Theme */
+        html:not(.dark) body {
+            background-color: #F1F5F9;
+            color: #1E293B;
+        }
+
+        html:not(.dark) ::-webkit-scrollbar-track {
+            background: #F1F5F9;
+        }
+
+        html:not(.dark) ::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+        }
+
+        html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            border-radius: 3px;
+        }
+
+        /* Card Hover */
+        .dark .card-hover:hover {
+            border-color: #0EA5E9;
+            box-shadow: 0 0 20px -5px rgba(14, 165, 233, 0.15);
+        }
+
+        html:not(.dark) .card-hover:hover {
+            border-color: #0284C7;
+            box-shadow: 0 4px 20px -5px rgba(2, 132, 199, 0.2);
+        }
+
+        /* Modal backdrop */
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+        }
+
+        html:not(.dark) .modal-backdrop {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Copy flash animation */
+        @keyframes copyFlash {
+            0% {
+                background-color: rgba(14, 165, 233, 0.3);
+            }
+
+            100% {
+                background-color: transparent;
+            }
+        }
+
+        .copy-flash {
+            animation: copyFlash 0.5s ease-out;
+        }
+
+        html:not(.dark) .copy-flash {
+            animation: copyFlashLight 0.5s ease-out;
+        }
+
+        @keyframes copyFlashLight {
+            0% {
+                background-color: rgba(2, 132, 199, 0.2);
+            }
+
+            100% {
+                background-color: transparent;
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col antialiased selection:bg-sky-500/30 selection:text-sky-200">
+
+    <!-- Sticky Header -->
+    <header
+        class="sticky top-0 z-50 dark:bg-dark-900/90 bg-white/90 backdrop-blur-md border-b dark:border-white/5 border-slate-200 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            <h1 class="text-lg font-semibold tracking-tight shrink-0 hidden sm:block">
+                <span class="text-sky-500">ATA</span> <span class="dark:text-white text-slate-800">Extended</span>
+            </h1>
+
+            <div class="relative flex-1 max-w-xl">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-4 w-4 dark:text-slate-500 text-slate-400" xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <input type="text" id="searchInput" placeholder="Search ATA codes, chapters, subsystems..."
+                    class="block w-full pl-9 pr-8 py-2 border dark:border-dark-500 border-slate-300 rounded-lg leading-5 dark:bg-dark-700/50 bg-white text-sm dark:text-slate-100 text-slate-800 dark:placeholder-slate-500 placeholder-slate-400 focus:outline-none dark:focus:bg-dark-700 focus:bg-white dark:focus:border-sky-500 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all duration-200"
+                    autofocus>
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <kbd
+                        class="dark:text-slate-600 text-slate-400 text-[10px] dark:border-dark-500 border-slate-300 border rounded px-1 py-0.5 font-mono">/</kbd>
+                </div>
+            </div>
+
+            <!-- Theme Toggle -->
+            <button id="themeToggle"
+                class="p-2 rounded-lg dark:bg-dark-600 bg-slate-100 dark:hover:bg-dark-500 hover:bg-slate-200 transition-colors"
+                title="Toggle theme">
+                <!-- Sun Icon (visible in dark mode) -->
+                <svg class="w-5 h-5 dark:block hidden text-amber-400" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z">
+                    </path>
+                </svg>
+                <!-- Moon Icon (visible in light mode) -->
+                <svg class="w-5 h-5 dark:hidden block text-slate-600" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
+                    </path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="mainContent" class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+        <!-- Grid container injected by JS -->
+    </main>
+
+    <!-- Modal for Subsystems -->
+    <div id="subsModal" class="fixed inset-0 z-[100] hidden">
+        <div class="modal-backdrop absolute inset-0" onclick="closeModal()"></div>
+        <div
+            class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[80vh] dark:bg-dark-800 bg-white rounded-xl shadow-2xl border dark:border-dark-500 border-slate-200 overflow-hidden">
+            <div class="flex items-center justify-between p-4 border-b dark:border-dark-500 border-slate-200">
+                <div>
+                    <h3 id="modalTitle" class="text-xl font-mono font-bold text-sky-500"></h3>
+                    <p id="modalSubtitle" class="text-sm dark:text-slate-400 text-slate-600"></p>
+                </div>
+                <button onclick="closeModal()"
+                    class="p-2 dark:hover:bg-dark-600 hover:bg-slate-100 rounded-lg transition-colors">
+                    <svg class="w-5 h-5 dark:text-slate-400 text-slate-500" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <div id="modalContent" class="p-4 overflow-y-auto max-h-[60vh]">
+                <!-- Subsystems list -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t dark:border-white/5 border-slate-200 py-6 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-xs dark:text-slate-700 text-slate-400 font-medium tracking-wide">
+                Emirhan Koç <span class="mx-2 dark:text-slate-800 text-slate-300">|</span> Aircraft Maintenance
+                Engineering Project
+            </p>
+        </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast"
+        class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-sky-500 text-white px-4 py-2 rounded-lg shadow-lg opacity-0 transition-all duration-300 pointer-events-none z-[200] font-medium text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span>Copied!</span>
+    </div>
+
+    <script>
+        // --- ATA Data Configuration ---
+        const ataData = [
+            // ==========================================
+            // Group 1: AIRCRAFT GENERAL
+            // ==========================================
+            {
+                code: "05",
+                title: "TIME LIMITS/ MAINTENANCE CHECKS",
+                group: "Aircraft General",
+                subs: [
+                    { code: "05-00", title: "General" },
+                    { code: "05-10", title: "Time Limits" },
+                    { code: "05-20", title: "Scheduled Maintenance Checks" },
+                    { code: "05-50", title: "Unscheduled Maintenance Checks" }
+                ]
+            },
+            {
+                code: "06",
+                title: "DIMENSIONS AND AREAS",
+                group: "Aircraft General",
+                subs: []
+            },
+            {
+                code: "07",
+                title: "LIFTING & SHORING",
+                group: "Aircraft General",
+                subs: [
+                    { code: "07-00", title: "General" },
+                    { code: "07-10", title: "Jacking" },
+                    { code: "07-20", title: "Shoring" }
+                ]
+            },
+            {
+                code: "08",
+                title: "LEVELING & WEIGHING",
+                group: "Aircraft General",
+                subs: [
+                    { code: "08-00", title: "General" },
+                    { code: "08-10", title: "Weighing and Balancing" },
+                    { code: "08-20", title: "Leveling" }
+                ]
+            },
+            {
+                code: "09",
+                title: "TOWING & TAXIING",
+                group: "Aircraft General",
+                subs: [
+                    { code: "09-00", title: "General" },
+                    { code: "09-10", title: "Towing" },
+                    { code: "09-20", title: "Taxiing" }
+                ]
+            },
+            {
+                code: "10",
+                title: "PARKING, MOORING, STORAGE & RETURN TO SERVICE",
+                group: "Aircraft General",
+                subs: []
+            },
+            {
+                code: "11",
+                title: "PLACARDS AND MARKINGS",
+                group: "Aircraft General",
+                subs: [
+                    { code: "11-00", title: "General" },
+                    { code: "11-10", title: "Exterior Color Schemes and Markings" },
+                    { code: "11-20", title: "Exterior Placards and Markings" },
+                    { code: "11-30", title: "Interior Placards" }
+                ]
+            },
+            {
+                code: "12",
+                title: "SERVICING",
+                group: "Aircraft General",
+                subs: [
+                    { code: "12-00", title: "General" },
+                    { code: "12-10", title: "Replenishing" },
+                    { code: "12-20", title: "Scheduled Servicing" },
+                    { code: "12-30", title: "Unscheduled Servicing" }
+                ]
+            },
+            { code: "13", title: "Unservicing", group: "Aircraft General", subs: [] },
+            { code: "14", title: "Reservicing", group: "Aircraft General", subs: [] },
+            { code: "15", title: "Ops Check Good", group: "Aircraft General", subs: [] },
+            {
+                code: "18",
+                title: "VIBRATION AND NOISE ANALYSIS (HELICOPTER ONLY)",
+                group: "Aircraft General",
+                subs: [
+                    { code: "18-00", title: "General" },
+                    { code: "18-10", title: "Vibration Analysis" },
+                    { code: "18-20", title: "Noise Analysis" }
+                ]
+            },
+            { code: "89", title: "FLIGHT TEST INSTALLATION", group: "Aircraft General", subs: [] },
+
+            // ==========================================
+            // Group 2: AIRFRAME SYSTEMS
+            // ==========================================
+            { code: "20", title: "STANDARD PRACTICES-AIRFRAME", group: "Airframe Systems", subs: [] },
+            {
+                code: "21",
+                title: "AIR CONDITIONING",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "21-00", title: "General" },
+                    { code: "21-10", title: "Compression" },
+                    { code: "21-20", title: "Distribution" },
+                    { code: "21-30", title: "Pressurization Control" },
+                    { code: "21-40", title: "Heating" },
+                    { code: "21-50", title: "Cooling" }
+                ]
+            },
+            {
+                code: "22",
+                title: "AUTO FLIGHT",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "22-00", title: "General" },
+                    { code: "22-10", title: "Autopilot" },
+                    { code: "22-20", title: "Speed-Attitude Correction" },
+                    { code: "22-30", title: "Auto Throttle" },
+                    { code: "22-40", title: "System Monitor" },
+                    { code: "22-50", title: "Aerodynamic Load Alleviating" }
+                ]
+            },
+            {
+                code: "23",
+                title: "COMMUNICATIONS",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "23-00", title: "General" },
+                    { code: "23-10", title: "Speech Communications" },
+                    { code: "23-15", title: "SATCOM" },
+                    { code: "23-20", title: "Data Transmission and Automatic Calling" },
+                    { code: "23-30", title: "Comfort" },
+                    { code: "23-40", title: "Interphone" },
+                    { code: "23-50", title: "Audio Integrating" },
+                    { code: "23-60", title: "Static Discharging" },
+                    { code: "23-70", title: "Audio & Video Monitoring" },
+                    { code: "23-80", title: "Integrated Automatic" }
+                ]
+            },
+            {
+                code: "24",
+                title: "ELECTRICAL POWER",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "24-00", title: "General" },
+                    { code: "24-10", title: "Generator Drive" },
+                    { code: "24-20", title: "AC Generation" },
+                    { code: "24-30", title: "DC Generation" },
+                    { code: "24-40", title: "External Power" },
+                    { code: "24-50", title: "AC Electrical Load Distribution" },
+                    { code: "24-60", title: "DC Electrical Load Distribution" }
+                ]
+            },
+            {
+                code: "25",
+                title: "EQUIPMENT/FURNISHINGS",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "25-00", title: "General" },
+                    { code: "25-10", title: "Flight Compartment" },
+                    { code: "25-20", title: "Passenger Compartment" },
+                    { code: "25-30", title: "Galley" },
+                    { code: "25-40", title: "Lavatories" },
+                    { code: "25-50", title: "Additional Compartments" },
+                    { code: "25-60", title: "Emergency" },
+                    { code: "25-70", title: "Available" },
+                    { code: "25-80", title: "Insulation" }
+                ]
+            },
+            {
+                code: "26",
+                title: "FIRE PROTECTION",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "26-00", title: "General" },
+                    { code: "26-10", title: "Detection" },
+                    { code: "26-20", title: "Extinguishing" },
+                    { code: "26-30", title: "Explosion Suppression" }
+                ]
+            },
+            {
+                code: "27",
+                title: "FLIGHT CONTROLS",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "27-00", title: "General" },
+                    { code: "27-10", title: "Aileron & Tab" },
+                    { code: "27-20", title: "Rudder & Tab" },
+                    { code: "27-30", title: "Elevator & Tab" },
+                    { code: "27-40", title: "Horizontal Stabilizer" },
+                    { code: "27-50", title: "Flaps" },
+                    { code: "27-60", title: "Spoiler, Drag Devices and Variable Aerodynamic Fairings" },
+                    { code: "27-70", title: "Gust Lock & Dampener" },
+                    { code: "27-80", title: "Lift Augmenting" }
+                ]
+            },
+            {
+                code: "28",
+                title: "FUEL",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "28-00", title: "General" },
+                    { code: "28-10", title: "Storage" },
+                    { code: "28-20", title: "Distribution" },
+                    { code: "28-30", title: "Dump" },
+                    { code: "28-40", title: "Indicating" }
+                ]
+            },
+            {
+                code: "29",
+                title: "HYDRAULIC POWER",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "29-00", title: "General" },
+                    { code: "29-10", title: "Main" },
+                    { code: "29-20", title: "Auxiliary" },
+                    { code: "29-30", title: "Indicating" }
+                ]
+            },
+            {
+                code: "30",
+                title: "ICE AND RAIN PROTECTION",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "30-00", title: "General" },
+                    { code: "30-10", title: "Airfoil" },
+                    { code: "30-20", title: "Air Intakes" },
+                    { code: "30-30", title: "Pitot and Static" },
+                    { code: "30-40", title: "Windows, Windshields and Doors" },
+                    { code: "30-50", title: "Antennas and Radomes" },
+                    { code: "30-60", title: "Propellers/Rotors" },
+                    { code: "30-70", title: "Water Lines" },
+                    { code: "30-80", title: "Detection" }
+                ]
+            },
+            {
+                code: "31",
+                title: "INDICATING/RECORDING SYSTEMS",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "31-00", title: "General" },
+                    { code: "31-10", title: "Instrument & Control Panels" },
+                    { code: "31-20", title: "Independent Instruments" },
+                    { code: "31-30", title: "Recorders" },
+                    { code: "31-40", title: "Central Computers" },
+                    { code: "31-50", title: "Central Warning Systems" },
+                    { code: "31-60", title: "Central Display Systems" },
+                    { code: "31-70", title: "Automatic Data Reporting Systems" }
+                ]
+            },
+            {
+                code: "32",
+                title: "LANDING GEAR",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "32-00", title: "General" },
+                    { code: "32-10", title: "Main Gear and Doors" },
+                    { code: "32-20", title: "Nose Gear and Doors" },
+                    { code: "32-30", title: "Extension and Retraction" },
+                    { code: "32-40", title: "Wheels and Brakes" },
+                    { code: "32-50", title: "Steering" },
+                    { code: "32-60", title: "Position and Warning" },
+                    { code: "32-70", title: "Supplementary Gear" }
+                ]
+            },
+            {
+                code: "33",
+                title: "LIGHTS",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "33-00", title: "General" },
+                    { code: "33-10", title: "Flight Compartment" },
+                    { code: "33-20", title: "Passenger Compartment" },
+                    { code: "33-30", title: "Cargo and Service Compartments" },
+                    { code: "33-40", title: "Exterior" },
+                    { code: "33-50", title: "Emergency Lighting" }
+                ]
+            },
+            {
+                code: "34",
+                title: "NAVIGATION",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "34-00", title: "General" },
+                    { code: "34-10", title: "Flight Environment" },
+                    { code: "34-20", title: "Attitude & Direction" },
+                    { code: "34-30", title: "Landing and Taxiing Aids" },
+                    { code: "34-40", title: "Independent Position Determining" },
+                    { code: "34-50", title: "Dependent Position Determining" },
+                    { code: "34-60", title: "Flight Management Computing" }
+                ]
+            },
+            {
+                code: "35",
+                title: "OXYGEN",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "35-00", title: "General" },
+                    { code: "35-10", title: "Crew" },
+                    { code: "35-20", title: "Passenger" },
+                    { code: "35-30", title: "Portable" }
+                ]
+            },
+            {
+                code: "36",
+                title: "PNEUMATIC",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "36-00", title: "General" },
+                    { code: "36-10", title: "Distribution" },
+                    { code: "36-20", title: "Indicating" }
+                ]
+            },
+            {
+                code: "37",
+                title: "VACUUM",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "37-00", title: "General" },
+                    { code: "37-10", title: "Distribution" },
+                    { code: "37-20", title: "Indicating" }
+                ]
+            },
+            {
+                code: "38",
+                title: "WATER/WASTE",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "38-00", title: "General" },
+                    { code: "38-10", title: "Potable" },
+                    { code: "38-20", title: "Wash" },
+                    { code: "38-30", title: "Waste Disposal" },
+                    { code: "38-40", title: "Air Supply" }
+                ]
+            },
+            {
+                code: "41",
+                title: "WATER BALLAST",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "41-00", title: "General" },
+                    { code: "41-10", title: "Storage" },
+                    { code: "41-20", title: "Dump" },
+                    { code: "41-30", title: "Indication" }
+                ]
+            },
+            { code: "42", title: "INTEGRATED MODULAR AVIONICS", group: "Airframe Systems", subs: [] },
+            {
+                code: "44",
+                title: "CABIN SYSTEMS",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "44-00", title: "General" },
+                    { code: "44-10", title: "Cabin Core System" },
+                    { code: "44-20", title: "Inflight Entertainment System" },
+                    { code: "44-30", title: "External Communication System" },
+                    { code: "44-40", title: "Cabin Mass Memory System" },
+                    { code: "44-50", title: "Cabin Monitoring System" },
+                    { code: "44-60", title: "Miscellaneous Cabin System" }
+                ]
+            },
+            {
+                code: "45",
+                title: "CENTRAL MAINTENANCE SYSTEM",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "45-00", title: "General" },
+                    { code: "45-05", title: "CMS/Aircraft General" },
+                    { code: "45-20", title: "CMS/Airframe Systems" },
+                    { code: "45-45", title: "Central Maintenance System" },
+                    { code: "45-50", title: "CMS/Structures" },
+                    { code: "45-60", title: "CMS/Propellers" },
+                    { code: "45-70", title: "CMS/Power Plant" }
+                ]
+            },
+            {
+                code: "46",
+                title: "INFORMATION SYSTEMS",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "46-00", title: "General" },
+                    { code: "46-10", title: "Airplane General Information Systems" },
+                    { code: "46-20", title: "Flight Deck Information Systems" },
+                    { code: "46-30", title: "Maintenance Information Systems" },
+                    { code: "46-40", title: "Passenger Cabin Information Systems" },
+                    { code: "46-50", title: "Miscellaneous Information Systems" }
+                ]
+            },
+            { code: "47", title: "NITROGEN GENERATION SYSTEM", group: "Airframe Systems", subs: [] },
+            {
+                code: "49",
+                title: "AIRBORNE AUXILIARY POWER",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "49-00", title: "General" },
+                    { code: "49-10", title: "Power Plant" },
+                    { code: "49-20", title: "Engine" },
+                    { code: "49-30", title: "Engine Fuel and Control" },
+                    { code: "49-40", title: "Ignition / Starting" },
+                    { code: "49-50", title: "Air" },
+                    { code: "49-60", title: "Engine Controls" },
+                    { code: "49-70", title: "Indicating" },
+                    { code: "49-80", title: "Exhaust" },
+                    { code: "49-90", title: "Oil" }
+                ]
+            },
+            {
+                code: "50",
+                title: "CARGO AND ACCESSORY COMPARTMENTS",
+                group: "Airframe Systems",
+                subs: [
+                    { code: "50-00", title: "General" },
+                    { code: "50-10", title: "Cargo Compartments" },
+                    { code: "50-20", title: "Cargo Loading Systems" },
+                    { code: "50-30", title: "Cargo Related Systems" },
+                    { code: "50-40", title: "Available" },
+                    { code: "50-50", title: "Accessory" },
+                    { code: "50-60", title: "Insulation" }
+                ]
+            },
+
+            // ==========================================
+            // Group 3: STRUCTURE
+            // ==========================================
+            {
+                code: "51",
+                title: "STANDARD PRACTICES, GENERAL",
+                group: "Structure",
+                subs: [
+                    { code: "51-00", title: "General" },
+                    { code: "51-10", title: "Investigation, Cleanup and Aerodynamic Smoothness" },
+                    { code: "51-20", title: "Processes" },
+                    { code: "51-30", title: "Materials" },
+                    { code: "51-40", title: "Fasteners" },
+                    { code: "51-50", title: "Support of Airplane for Repair and Alignment Check Procedures" },
+                    { code: "51-60", title: "Control-Surface Balancing" },
+                    { code: "51-70", title: "Repairs" },
+                    { code: "51-80", title: "Electrical Bonding" }
+                ]
+            },
+            {
+                code: "52",
+                title: "DOORS",
+                group: "Structure",
+                subs: [
+                    { code: "52-00", title: "General" },
+                    { code: "52-10", title: "Passenger/Crew" },
+                    { code: "52-20", title: "Emergency Exit" },
+                    { code: "52-30", title: "Cargo" },
+                    { code: "52-40", title: "Service and Miscellaneous" },
+                    { code: "52-50", title: "Fixed Interior" },
+                    { code: "52-60", title: "Entrance Stairs" },
+                    { code: "52-70", title: "Monitoring and Operation" },
+                    { code: "52-80", title: "Landing Gear" }
+                ]
+            },
+            {
+                code: "53",
+                title: "FUSELAGE",
+                group: "Structure",
+                subs: [
+                    { code: "53-00", title: "General" },
+                    { code: "53-10", title: "Fuselage Sections (Main Frame/Aux)" }
+                ]
+            },
+            {
+                code: "54",
+                title: "NACELLES/PYLONS",
+                group: "Structure",
+                subs: [
+                    { code: "54-00", title: "General" },
+                    { code: "54-10", title: "Nacelle Section" },
+                    { code: "54-50", title: "Pylon" }
+                ]
+            },
+            {
+                code: "55",
+                title: "STABILIZERS",
+                group: "Structure",
+                subs: [
+                    { code: "55-00", title: "General" },
+                    { code: "55-10", title: "Horizontal Stabilizer or Canard" },
+                    { code: "55-20", title: "Elevator" },
+                    { code: "55-30", title: "Vertical Stabilizer" },
+                    { code: "55-40", title: "Rudder" }
+                ]
+            },
+            {
+                code: "56",
+                title: "WINDOWS",
+                group: "Structure",
+                subs: [
+                    { code: "56-00", title: "General" },
+                    { code: "56-10", title: "Flight Compartment" },
+                    { code: "56-20", title: "Passenger Compartment" },
+                    { code: "56-30", title: "Door" },
+                    { code: "56-40", title: "Inspection and Observation" }
+                ]
+            },
+            {
+                code: "57",
+                title: "WINGS",
+                group: "Structure",
+                subs: [
+                    { code: "57-00", title: "General" },
+                    { code: "57-10", title: "Center Wing" },
+                    { code: "57-20", title: "Outer Wing" },
+                    { code: "57-30", title: "Wing Tip" },
+                    { code: "57-40", title: "Leading Edge and Leading Edge Devices" },
+                    { code: "57-50", title: "Trailing Edge Trailing Edge Devices" },
+                    { code: "57-60", title: "Ailerons and Elevons" },
+                    { code: "57-70", title: "Spoilers" },
+                    { code: "57-90", title: "Wing Folding System" }
+                ]
+            },
+
+            // ==========================================
+            // Group 4: PROPELLER/ROTOR
+            // ==========================================
+            { code: "60", title: "STANDARD PRACTICES - PROPELLER/ROTOR", group: "Propeller/Rotor", subs: [] },
+            {
+                code: "61",
+                title: "PROPELLERS/PROPULSION",
+                group: "Propeller/Rotor",
+                subs: [
+                    { code: "61-00", title: "General" },
+                    { code: "61-10", title: "Propeller Assembly" },
+                    { code: "61-20", title: "Controlling" },
+                    { code: "61-30", title: "Braking" },
+                    { code: "61-40", title: "Indicating" },
+                    { code: "61-50", title: "Propulsor Duct" }
+                ]
+            },
+            {
+                code: "62",
+                title: "ROTOR(S)",
+                group: "Propeller/Rotor",
+                subs: [
+                    { code: "62-00", title: "General" },
+                    { code: "62-10", title: "Rotor blades" },
+                    { code: "62-20", title: "Rotor head(s)" },
+                    { code: "62-30", title: "Rotor Shaft(s)/Swashplate Assy(ies)" }
+                ]
+            },
+            {
+                code: "63",
+                title: "ROTOR DRIVE(S)",
+                group: "Propeller/Rotor",
+                subs: [
+                    { code: "63-00", title: "General" },
+                    { code: "63-10", title: "Engine/Gearbox couplings" },
+                    { code: "63-20", title: "Gearbox(es)" },
+                    { code: "63-30", title: "Mounts, attachments" },
+                    { code: "63-40", title: "Indicating" }
+                ]
+            },
+            {
+                code: "64",
+                title: "TAIL ROTOR",
+                group: "Propeller/Rotor",
+                subs: [
+                    { code: "64-00", title: "General" },
+                    { code: "64-10", title: "Rotor blades" },
+                    { code: "64-20", title: "Rotor head" },
+                    { code: "64-30", title: "Available" },
+                    { code: "64-40", title: "Indicating" }
+                ]
+            },
+            {
+                code: "65",
+                title: "TAIL ROTOR DRIVE",
+                group: "Propeller/Rotor",
+                subs: [
+                    { code: "65-00", title: "General" },
+                    { code: "65-10", title: "Shafts" },
+                    { code: "65-20", title: "Gearboxes" },
+                    { code: "65-30", title: "Available" },
+                    { code: "65-40", title: "Indicating" }
+                ]
+            },
+            {
+                code: "66",
+                title: "FOLDING BLADES/PYLON",
+                group: "Propeller/Rotor",
+                subs: [
+                    { code: "66-00", title: "General" },
+                    { code: "66-10", title: "Rotor blades" },
+                    { code: "66-20", title: "Tail pylon" },
+                    { code: "66-30", title: "Controls and Indicating" }
+                ]
+            },
+            {
+                code: "67",
+                title: "ROTORS FLIGHT CONTROL",
+                group: "Propeller/Rotor",
+                subs: [
+                    { code: "67-00", title: "General" },
+                    { code: "67-10", title: "Rotor" },
+                    { code: "67-20", title: "Anti-torque Rotor control (Yaw control)" },
+                    { code: "67-30", title: "Servo-control System" }
+                ]
+            },
+
+            // ==========================================
+            // Group 5: POWER PLANT
+            // ==========================================
+            { code: "70", title: "STANDARD PRACTICES - ENGINES", group: "Power Plant", subs: [] },
+            {
+                code: "71",
+                title: "POWER PLANT",
+                group: "Power Plant",
+                subs: [
+                    { code: "71-00", title: "General" },
+                    { code: "71-10", title: "Cowling" },
+                    { code: "71-30", title: "Fireseals" },
+                    { code: "71-40", title: "Attach Fittings" },
+                    { code: "71-50", title: "Electrical Harness" },
+                    { code: "71-60", title: "Air Intakes" },
+                    { code: "71-70", title: "Engine Drains" }
+                ]
+            },
+            {
+                code: "72",
+                title: "ENGINE - RECIPROCATING/TURBINE",
+                group: "Power Plant",
+                subs: [
+                    { code: "72-00", title: "General" },
+                    { code: "72-10", title: "Reduction Gear" },
+                    { code: "72-20", title: "Air Inlet Section" },
+                    { code: "72-30", title: "Compressor Section" },
+                    { code: "72-40", title: "Combustion Section" },
+                    { code: "72-50", title: "Turbine Section" },
+                    { code: "72-60", title: "Accessory Drives" },
+                    { code: "72-70", title: "By-pass Section" },
+                    { code: "72-80", title: "Propulsor Section (Rear Mounted)" }
+                ]
+            },
+            {
+                code: "73",
+                title: "ENGINE - FUEL AND CONTROL",
+                group: "Power Plant",
+                subs: [
+                    { code: "73-00", title: "General" },
+                    { code: "73-10", title: "Distribution" },
+                    { code: "73-20", title: "Controlling" },
+                    { code: "73-30", title: "Indicating" }
+                ]
+            },
+            {
+                code: "74",
+                title: "IGNITION",
+                group: "Power Plant",
+                subs: [
+                    { code: "74-00", title: "General" },
+                    { code: "74-10", title: "Electrical Power Supply" },
+                    { code: "74-20", title: "Distribution" },
+                    { code: "74-30", title: "Switching" }
+                ]
+            },
+            {
+                code: "75",
+                title: "AIR (ENGINE)",
+                group: "Power Plant",
+                subs: [
+                    { code: "75-00", title: "General" },
+                    { code: "75-10", title: "Engine Anti-Icing" },
+                    { code: "75-20", title: "Cooling" },
+                    { code: "75-30", title: "Compressor Control" },
+                    { code: "75-40", title: "Indicating" }
+                ]
+            },
+            {
+                code: "76",
+                title: "ENGINE CONTROLS",
+                group: "Power Plant",
+                subs: [
+                    { code: "76-00", title: "General" },
+                    { code: "76-10", title: "Power Control" },
+                    { code: "76-20", title: "Emergency Shutdown" }
+                ]
+            },
+            {
+                code: "77",
+                title: "ENGINE INDICATING",
+                group: "Power Plant",
+                subs: [
+                    { code: "77-00", title: "General" },
+                    { code: "77-10", title: "Power" },
+                    { code: "77-20", title: "Temperature" },
+                    { code: "77-30", title: "Analyzers" },
+                    { code: "77-40", title: "Integrated Engine Instrument Systems" }
+                ]
+            },
+            {
+                code: "78",
+                title: "EXHAUST",
+                group: "Power Plant",
+                subs: [
+                    { code: "78-00", title: "General" },
+                    { code: "78-10", title: "Collector/Nozzle" },
+                    { code: "78-20", title: "Noise Suppressor" },
+                    { code: "78-30", title: "Thrust Reverser" },
+                    { code: "78-40", title: "Supplementary Air" }
+                ]
+            },
+            {
+                code: "79",
+                title: "OIL",
+                group: "Power Plant",
+                subs: [
+                    { code: "79-00", title: "General" },
+                    { code: "79-10", title: "Storage" },
+                    { code: "79-20", title: "Distribution" },
+                    { code: "79-30", title: "Indicating" }
+                ]
+            },
+            {
+                code: "80",
+                title: "STARTING",
+                group: "Power Plant",
+                subs: [
+                    { code: "80-00", title: "General" },
+                    { code: "80-10", title: "Cranking" }
+                ]
+            },
+            {
+                code: "81",
+                title: "TURBINES",
+                group: "Power Plant",
+                subs: [
+                    { code: "81-00", title: "General" },
+                    { code: "81-10", title: "Power Recovery" },
+                    { code: "81-20", title: "Turbo-Supercharger" }
+                ]
+            },
+            {
+                code: "82",
+                title: "WATER INJECTION",
+                group: "Power Plant",
+                subs: [
+                    { code: "82-00", title: "General" },
+                    { code: "82-10", title: "Storage" },
+                    { code: "82-20", title: "Distribution" },
+                    { code: "82-30", title: "Dumping and Purging" },
+                    { code: "82-40", title: "Indicating" }
+                ]
+            },
+            {
+                code: "83",
+                title: "ACCESSORY GEAR-BOXES",
+                group: "Power Plant",
+                subs: [
+                    { code: "83-00", title: "General" },
+                    { code: "83-10", title: "Drive Shaft Section" },
+                    { code: "83-20", title: "Gearbox Section" }
+                ]
+            },
+            {
+                code: "84",
+                title: "PROPULSION AUGMENTATION",
+                group: "Power Plant",
+                subs: [
+                    { code: "84-00", title: "General" },
+                    { code: "84-10", title: "Jet Assist Takeoff" }
+                ]
+            },
+            {
+                code: "85",
+                title: "RECIPROCATING ENGINE",
+                group: "Power Plant",
+                subs: [
+                    { code: "85-00", title: "General" },
+                    { code: "85-10", title: "Fuel Cell Stack" }
+                ]
+            },
+
+            // ==========================================
+            // Group 6: MISCELLANEOUS
+            // ==========================================
+            { code: "91", title: "CHARTS", group: "Miscellaneous", subs: [] },
+            {
+                code: "97",
+                title: "WIRING REPORTING",
+                group: "Miscellaneous",
+                subs: [
+                    { code: "97-00-00", title: "General" },
+                    { code: "97-01-00", title: "Zone 100 Fuselage Lower" },
+                    { code: "97-02-00", title: "Zone 200 Fuselage Top" },
+                    { code: "97-03-00", title: "Zone 300 Stabilizers" },
+                    { code: "97-04-00", title: "Zone 400 Nacelles-Pylons" },
+                    { code: "97-05-00", title: "Zone 500 Left Wing" },
+                    { code: "97-06-00", title: "Zone 600 Right Wing" },
+                    { code: "97-07-00", title: "Zone 700 Landing Gear Compartment" },
+                    { code: "97-08-00", title: "Zone 800 Doors" },
+                    { code: "97-09-00", title: "Zone 900 Lavatories & Galleys" },
+                    { code: "97-20-00", title: "Electrical Standard Items/Practices" },
+                    { code: "97-21-00", title: "Air Conditioning - General" },
+                    { code: "97-21-10", title: "Compression" },
+                    { code: "97-21-20", title: "Distribution" },
+                    { code: "97-21-30", title: "Pressurization Control" },
+                    { code: "97-21-40", title: "Heating" },
+                    { code: "97-21-50", title: "Cooling" },
+                    { code: "97-21-60", title: "Temperature Control" },
+                    { code: "97-21-70", title: "Moisture/Air Contaminant Control" },
+                    { code: "97-22-00", title: "Auto Flight - General" },
+                    { code: "97-22-10", title: "Autopilot" },
+                    { code: "97-22-20", title: "Speed - Attitude Correction" },
+                    { code: "97-22-30", title: "Auto Throttle" },
+                    { code: "97-22-40", title: "System Monitors" },
+                    { code: "97-22-50", title: "Aerodynamic Load Alleviating" },
+                    { code: "97-23-00", title: "Communications - General" },
+                    { code: "97-23-10", title: "Speech Communications" },
+                    { code: "97-23-15", title: "SATCOM" },
+                    { code: "97-23-20", title: "Data Transmission and Automatic Calling" },
+                    { code: "97-23-30", title: "Passenger Address, Entertainment and Comfort" },
+                    { code: "97-23-40", title: "Interphone" },
+                    { code: "97-23-50", title: "Audio Integrating" },
+                    { code: "97-23-60", title: "Static Discharging" },
+                    { code: "97-23-70", title: "Audio and Video Monitoring" },
+                    { code: "97-23-80", title: "Integrated Automatic Tuning" },
+                    { code: "97-24-00", title: "Electrical Power - General" },
+                    { code: "97-24-10", title: "Generator Drive" },
+                    { code: "97-24-20", title: "AC Generation" },
+                    { code: "97-24-30", title: "DC Generation" },
+                    { code: "97-24-40", title: "External Power" },
+                    { code: "97-24-50", title: "AC Electrical Load Distribution" },
+                    { code: "97-24-60", title: "DC Electrical Load Distribution" },
+                    { code: "97-25-00", title: "Equipment/Furnishings - General" },
+                    { code: "97-25-10", title: "Flight Compartment" },
+                    { code: "97-25-20", title: "Passenger Compartment" },
+                    { code: "97-25-30", title: "Galley" },
+                    { code: "97-25-40", title: "Lavatories" },
+                    { code: "97-25-60", title: "Emergency" },
+                    { code: "97-25-80", title: "Insulation" },
+                    { code: "97-26-00", title: "Fire Protection - General" },
+                    { code: "97-26-10", title: "Detection" },
+                    { code: "97-26-20", title: "Extinguishing" },
+                    { code: "97-26-30", title: "Explosion Suppression" },
+                    { code: "97-27-00", title: "Flight Controls - General" },
+                    { code: "97-27-10", title: "Aileron & Tab" },
+                    { code: "97-27-20", title: "Rudder & Tab" },
+                    { code: "97-27-30", title: "Elevator & Tab" },
+                    { code: "97-27-40", title: "Horizontal Stabilizer" },
+                    { code: "97-27-50", title: "Flaps" },
+                    { code: "97-27-60", title: "Spoiler, Drag Devices and Variable Aerodynamic Fairings" },
+                    { code: "97-27-70", title: "Gust Lock & Dampener" },
+                    { code: "97-27-80", title: "Lift Augmenting" },
+                    { code: "97-28-00", title: "Fuel - General" },
+                    { code: "97-28-10", title: "Storage" },
+                    { code: "97-28-20", title: "Distribution" },
+                    { code: "97-28-30", title: "Dump" },
+                    { code: "97-28-40", title: "Indicating" },
+                    { code: "97-29-00", title: "Hydraulic Power - General" },
+                    { code: "97-29-10", title: "Main" },
+                    { code: "97-29-20", title: "Auxiliary" },
+                    { code: "97-29-30", title: "Indicating" },
+                    { code: "97-30-00", title: "Ice and Rain Protection - General" },
+                    { code: "97-30-10", title: "Airfoil" },
+                    { code: "97-30-20", title: "Air Intakes" },
+                    { code: "97-30-30", title: "Pitot and Static" },
+                    { code: "97-30-40", title: "Windows, Windshields and Doors" },
+                    { code: "97-30-50", title: "Antennas And Radomes" },
+                    { code: "97-30-60", title: "Propellers/Rotors" },
+                    { code: "97-30-70", title: "Water Lines" },
+                    { code: "97-30-80", title: "Detection" },
+                    { code: "97-31-00", title: "Indicating/Recording Systems - General" },
+                    { code: "97-31-10", title: "Instrument and Control Panels" },
+                    { code: "97-31-20", title: "Independent Instruments" },
+                    { code: "97-31-30", title: "Recorders" },
+                    { code: "97-31-40", title: "Central Computers" },
+                    { code: "97-31-50", title: "Central Warning Systems" },
+                    { code: "97-31-60", title: "Central Display Systems" },
+                    { code: "97-31-70", title: "Automatic Data Reporting Systems" },
+                    { code: "97-32-00", title: "Landing Gear- General" },
+                    { code: "97-32-10", title: "Main Gear and Doors" },
+                    { code: "97-32-20", title: "Nose Gear and Doors" },
+                    { code: "97-32-30", title: "Extension and Retraction" },
+                    { code: "97-32-40", title: "Wheels and Brakes" },
+                    { code: "97-32-50", title: "Steering" },
+                    { code: "97-32-60", title: "Position And Warning" },
+                    { code: "97-32-70", title: "Supplementary Gear" },
+                    { code: "97-33-00", title: "Lights - General" },
+                    { code: "97-33-10", title: "Flight Compartment" },
+                    { code: "97-33-20", title: "Passenger Compartment" },
+                    { code: "97-33-30", title: "Cargo and Service Compartments" },
+                    { code: "97-33-40", title: "Exterior" },
+                    { code: "97-33-50", title: "Emergency Lighting" },
+                    { code: "97-34-00", title: "Navigation - General" },
+                    { code: "97-34-10", title: "Flight Environment Data" },
+                    { code: "97-34-20", title: "Attitude & Direction" },
+                    { code: "97-34-30", title: "Landing and Taxiing Aids" },
+                    { code: "97-34-40", title: "Independent Position Determining" },
+                    { code: "97-34-50", title: "Dependent Position Determining" },
+                    { code: "97-34-60", title: "Flight Management Computing" },
+                    { code: "97-35-00", title: "Oxygen - General" },
+                    { code: "97-35-10", title: "Crew" },
+                    { code: "97-35-20", title: "Passenger" },
+                    { code: "97-35-30", title: "Portable" },
+                    { code: "97-36-00", title: "Pneumatic - General" },
+                    { code: "97-36-10", title: "Distribution" },
+                    { code: "97-36-20", title: "Indicating" },
+                    { code: "97-37-00", title: "Vacuum - General" },
+                    { code: "97-37-10", title: "Distribution" },
+                    { code: "97-37-20", title: "Indicating" },
+                    { code: "97-38-00", title: "Water/Waste - General" },
+                    { code: "97-38-10", title: "Potable" },
+                    { code: "97-38-20", title: "Wash" },
+                    { code: "97-38-30", title: "Waste Disposal" },
+                    { code: "97-38-40", title: "Air Supply" },
+                    { code: "97-44-00", title: "Cabin Systems - General" },
+                    { code: "97-44-10", title: "Cabin Core System" },
+                    { code: "97-44-20", title: "In-flight Entertainment System" },
+                    { code: "97-44-30", title: "External Communication System" },
+                    { code: "97-44-40", title: "Cabin Mass Memory System" },
+                    { code: "97-44-50", title: "Cabin Monitoring System" },
+                    { code: "97-44-60", title: "Miscellaneous Cabin System" },
+                    { code: "97-45-00", title: "Central Maintenance System (CMS) General" },
+                    { code: "97-45-05", title: "CMS/Aircraft General" },
+                    { code: "97-45-20", title: "CMS/Airframe Systems" },
+                    { code: "97-45-45", title: "Central Maintenance System" },
+                    { code: "97-45-50", title: "CMS/Structures" },
+                    { code: "97-45-60", title: "CMS/Propellers" },
+                    { code: "97-45-70", title: "CMS/Power Plant" },
+                    { code: "97-46-00", title: "Information Systems - General" },
+                    { code: "97-46-10", title: "Airplane General Information Systems" },
+                    { code: "97-46-20", title: "Flight Deck Information Systems" },
+                    { code: "97-46-30", title: "Maintenance Information Systems" },
+                    { code: "97-46-40", title: "Passenger Cabin Information Systems" },
+                    { code: "97-46-50", title: "Miscellaneous Information Systems" },
+                    { code: "97-49-00", title: "Airborne Auxiliary Power - General" },
+                    { code: "97-49-10", title: "Power Plant" },
+                    { code: "97-49-20", title: "Engine" },
+                    { code: "97-49-30", title: "Engine Fuel And Control" },
+                    { code: "97-49-40", title: "Ignition And Starting" },
+                    { code: "97-49-50", title: "Air" },
+                    { code: "97-49-60", title: "Engine Controls" },
+                    { code: "97-49-70", title: "Indicating" },
+                    { code: "97-49-80", title: "Exhaust" },
+                    { code: "97-49-90", title: "Oil" },
+                    { code: "97-50-00", title: "Cargo And Accessory Compartments General" },
+                    { code: "97-50-10", title: "Cargo Compartments" },
+                    { code: "97-50-20", title: "Cargo Loading Systems" },
+                    { code: "97-50-30", title: "Cargo Related Systems" },
+                    { code: "97-50-40", title: "Available" },
+                    { code: "97-50-50", title: "Accessory Compartments" },
+                    { code: "97-50-60", title: "Insulation" },
+                    { code: "97-52-00", title: "Doors - General" },
+                    { code: "97-52-10", title: "Passenger/Crew" },
+                    { code: "97-52-20", title: "Emergency Exit" },
+                    { code: "97-52-30", title: "Cargo" },
+                    { code: "97-52-40", title: "Service" },
+                    { code: "97-52-50", title: "Fixed Interior" },
+                    { code: "97-52-60", title: "Entrance Stairs" },
+                    { code: "97-52-70", title: "Door Warning" },
+                    { code: "97-52-80", title: "Landing Gear" },
+                    { code: "97-53-00", title: "Fuselage - General" },
+                    { code: "97-54-00", title: "Nacelles/Pylons - General" },
+                    { code: "97-54-10", title: "Nacelle Section" },
+                    { code: "97-54-50", title: "Pylon" },
+                    { code: "97-55-00", title: "Stabilizers - General" },
+                    { code: "97-55-10", title: "Horizontal Stabilizer or Canard" },
+                    { code: "97-55-20", title: "Elevator" },
+                    { code: "97-55-30", title: "Vertical Stabilizer" },
+                    { code: "97-55-40", title: "Rudder" },
+                    { code: "97-56-00", title: "Windows - General" },
+                    { code: "97-56-10", title: "Flight Compartment" },
+                    { code: "97-56-20", title: "Passenger Compartment" },
+                    { code: "97-56-30", title: "Door" },
+                    { code: "97-56-40", title: "Inspection and Observation" },
+                    { code: "97-57-00", title: "Wings - General" },
+                    { code: "97-57-10", title: "Center Wing" },
+                    { code: "97-57-20", title: "Outer Wing" },
+                    { code: "97-57-30", title: "Wing Tip" },
+                    { code: "97-57-40", title: "Leading Edge and Leading Edge Devices" },
+                    { code: "97-57-50", title: "Trailing Edge and Trailing Edge Devices" },
+                    { code: "97-57-60", title: "Ailerons" },
+                    { code: "97-57-70", title: "Spoilers" },
+                    { code: "97-57-90", title: "Wing Folding System" },
+                    { code: "97-61-00", title: "Propellers/Propulsors - General" },
+                    { code: "97-61-10", title: "Propeller Assembly" },
+                    { code: "97-61-20", title: "Controlling" },
+                    { code: "97-61-30", title: "Braking" },
+                    { code: "97-61-40", title: "Indicating" },
+                    { code: "97-61-50", title: "Propulsor Duct" },
+                    { code: "97-62-00", title: "Rotors" },
+                    { code: "97-63-00", title: "Rotor Drives" },
+                    { code: "97-64-00", title: "Tail Rotor" },
+                    { code: "97-65-00", title: "Tail Rotor Drive" },
+                    { code: "97-66-00", title: "Folding Blades/Pylon" },
+                    { code: "97-67-00", title: "Rotors Flight Control" },
+                    { code: "97-71-00", title: "Power Plant - General" },
+                    { code: "97-71-10", title: "Cowling" },
+                    { code: "97-71-20", title: "Mounts" },
+                    { code: "97-71-30", title: "Fire seals" },
+                    { code: "97-71-40", title: "Attach Fittings" },
+                    { code: "97-71-50", title: "Electrical Harness" },
+                    { code: "97-71-60", title: "Air Intakes" },
+                    { code: "97-71-70", title: "Engine Drains" },
+                    { code: "97-72-00", title: "Engine Turbine/Turbo Prop Ducted Fan/Unducted Fan" },
+                    { code: "97-72-10", title: "Reduction Gear, Shaft Section" },
+                    { code: "97-72-20", title: "Air Inlet Section" },
+                    { code: "97-72-30", title: "Compressor Section" },
+                    { code: "97-72-40", title: "Combustion Section" },
+                    { code: "97-72-50", title: "Turbine Section" },
+                    { code: "97-72-60", title: "Accessory Drives" },
+                    { code: "97-72-70", title: "By-pass Section" },
+                    { code: "97-72-80", title: "Propulsor Section (Rear Mounted)" },
+                    { code: "97-73-00", title: "Engine Fuel And Control - General" },
+                    { code: "97-73-10", title: "Distribution" },
+                    { code: "97-73-20", title: "Controlling" },
+                    { code: "97-73-30", title: "Indicating" },
+                    { code: "97-74-00", title: "Ignition - General" },
+                    { code: "97-74-10", title: "Electrical Power Supply" },
+                    { code: "97-74-20", title: "Distribution" },
+                    { code: "97-74-30", title: "Switching" },
+                    { code: "97-75-00", title: "Air - General" },
+                    { code: "97-75-10", title: "Engine Anti-Icing" },
+                    { code: "97-75-20", title: "Cooling" },
+                    { code: "97-75-30", title: "Compressor Control" },
+                    { code: "97-75-40", title: "Indicating" },
+                    { code: "97-76-00", title: "Engine Controls - General" },
+                    { code: "97-76-10", title: "Power Control" },
+                    { code: "97-76-20", title: "Emergency Shutdown" },
+                    { code: "97-77-00", title: "Engine Indicating - General" },
+                    { code: "97-77-10", title: "Power" },
+                    { code: "97-77-20", title: "Temperature" },
+                    { code: "97-77-30", title: "Analyzers" },
+                    { code: "97-77-40", title: "Integrated Engine Instrument Systems" },
+                    { code: "97-78-00", title: "Exhaust - General" },
+                    { code: "97-78-10", title: "Collector/Nozzle" },
+                    { code: "97-78-20", title: "Noise Suppressor" },
+                    { code: "97-78-30", title: "Thrust Reverser" },
+                    { code: "97-78-40", title: "Supplementary Air" },
+                    { code: "97-79-00", title: "Oil - General" },
+                    { code: "97-79-10", title: "Storage" },
+                    { code: "97-79-30", title: "Indicating" },
+                    { code: "97-80-00", title: "Starting - General" },
+                    { code: "97-80-10", title: "Cranking" }
+                ]
+            },
+            { code: "115", title: "FLIGHT SIMULATOR SYSTEMS", group: "Miscellaneous", subs: [] },
+            { code: "116", title: "FLIGHT SIMULATOR CUEING SYSTEM", group: "Miscellaneous", subs: [] },
+
+            // ==========================================
+            // Group 7: MILITARY/PECULIAR
+            // ==========================================
+            { code: "92", title: "ELECTRICAL POWER MULTIPLEXING", group: "Military/Peculiar", subs: [] },
+            { code: "93", title: "SURVEILLANCE", group: "Military/Peculiar", subs: [] },
+            { code: "94", title: "WEAPON SYSTEM", group: "Military/Peculiar", subs: [] },
+            { code: "95", title: "CREW ESCAPE AND SAFETY", group: "Military/Peculiar", subs: [] },
+            { code: "96", title: "MISSILES, DRONES AND TELEMETRY", group: "Military/Peculiar", subs: [] },
+            { code: "98", title: "METEOROLOGICAL AND ATMOSPHERIC RESEARCH", group: "Military/Peculiar", subs: [] },
+            { code: "99", title: "ELECTRONIC WARFARE SYSTEM", group: "Military/Peculiar", subs: [] }
+        ];
+
+        // --- Core Application Logic ---
+
+        const mainContent = document.getElementById('mainContent');
+        const searchInput = document.getElementById('searchInput');
+        const toast = document.getElementById('toast');
+        const subsModal = document.getElementById('subsModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalSubtitle = document.getElementById('modalSubtitle');
+        const modalContent = document.getElementById('modalContent');
+        const themeToggle = document.getElementById('themeToggle');
+
+        const MAX_VISIBLE_SUBS = 4;
+
+        function renderData(data) {
+            mainContent.innerHTML = '';
+
+            const groups = {};
+            data.forEach(item => {
+                if (!groups[item.group]) groups[item.group] = [];
+                groups[item.group].push(item);
+            });
+
+            for (const [groupName, items] of Object.entries(groups)) {
+
+                const groupHeader = document.createElement('div');
+                groupHeader.className = "col-span-full pt-5 pb-2 border-b dark:border-dark-500/50 border-slate-200 mb-4";
+                groupHeader.innerHTML = `<h2 class="text-xs font-bold uppercase tracking-widest dark:text-slate-500 text-slate-400">${groupName}</h2>`;
+                mainContent.appendChild(groupHeader);
+
+                const grid = document.createElement('div');
+                grid.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8";
+
+                items.forEach(chapter => {
+                    const card = document.createElement('div');
+                    card.className = "card-hover dark:bg-dark-700/50 bg-white border dark:border-dark-500/50 border-slate-200 rounded-xl p-5 transition-all duration-200 group relative";
+
+                    const headerHtml = `
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="min-w-0 flex-1">
+                                <h3 class="text-2xl font-mono font-bold text-sky-500 leading-none mb-1.5">${chapter.code}</h3>
+                                <p class="text-sm dark:text-slate-300 text-slate-700 font-medium leading-snug">${chapter.title}</p>
+                            </div>
+                            <button 
+                                onclick="event.stopPropagation(); copyWithFlash(this.closest('.card-hover'), 'ATA ${chapter.code} - ${chapter.title}')" 
+                                class="opacity-0 group-hover:opacity-100 transition-opacity p-2 dark:text-slate-500 text-slate-400 dark:hover:text-white hover:text-slate-700 dark:hover:bg-dark-600 hover:bg-slate-100 rounded-lg ml-2 shrink-0"
+                                title="Copy"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                            </button>
+                        </div>
+                    `;
+
+                    let subsHtml = '';
+                    if (chapter.subs.length > 0) {
+                        subsHtml = '<ul class="space-y-1 mt-4 border-t dark:border-dark-500/30 border-slate-100 pt-3">';
+                        const visibleSubs = chapter.subs.slice(0, MAX_VISIBLE_SUBS);
+                        const remainingCount = chapter.subs.length - MAX_VISIBLE_SUBS;
+
+                        visibleSubs.forEach(sub => {
+                            subsHtml += `
+                                <li class="sub-item group/sub flex items-center justify-between text-sm dark:text-slate-400 text-slate-600 dark:hover:text-sky-400 hover:text-sky-600 transition-colors cursor-pointer py-1.5 px-2 -mx-1 rounded-lg dark:hover:bg-dark-600/50 hover:bg-slate-50" onclick="event.stopPropagation(); copyWithFlash(this, 'ATA ${sub.code} - ${sub.title}')">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <span class="font-mono text-xs font-semibold dark:text-slate-500 text-slate-400 shrink-0">${sub.code}</span>
+                                        <span class="truncate">${sub.title}</span>
+                                    </div>
+                                </li>
+                            `;
+                        });
+
+                        if (remainingCount > 0) {
+                            const chapterData = JSON.stringify(chapter).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                            subsHtml += `
+                                <li class="pt-2">
+                                    <button 
+                                        onclick="event.stopPropagation(); openModal(${JSON.stringify(chapter).replace(/"/g, '&quot;')})"
+                                        class="w-full text-center text-xs font-medium text-sky-500 hover:text-sky-400 dark:bg-dark-600/30 bg-slate-50 hover:bg-slate-100 dark:hover:bg-dark-600/50 py-2 rounded-lg transition-colors"
+                                    >
+                                        + ${remainingCount} more subsystems
+                                    </button>
+                                </li>
+                            `;
+                        }
+                        subsHtml += '</ul>';
+                    }
+
+                    card.innerHTML = headerHtml + subsHtml;
+                    grid.appendChild(card);
+                });
+
+                mainContent.appendChild(grid);
+            }
+
+            if (data.length === 0) {
+                mainContent.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-20 dark:text-slate-600 text-slate-400">
+                        <svg class="w-12 h-12 mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <p class="text-sm">No ATA codes found.</p>
+                        <p class="text-xs opacity-60 mt-1">Try "Landing Gear" or "32-10"</p>
+                    </div>
+                `;
+            }
+        }
+
+        // --- Modal Functions ---
+        function openModal(chapter) {
+            modalTitle.textContent = `ATA ${chapter.code}`;
+            modalSubtitle.textContent = chapter.title;
+
+            let html = '<ul class="space-y-1">';
+            chapter.subs.forEach(sub => {
+                html += `
+                    <li class="sub-item group/sub flex items-center justify-between text-base dark:text-slate-300 text-slate-600 dark:hover:text-sky-400 hover:text-sky-600 transition-all cursor-pointer py-2.5 px-3 -mx-1 rounded-lg dark:hover:bg-dark-600/50 hover:bg-slate-50" onclick="copyWithFlash(this, 'ATA ${sub.code} - ${sub.title}')">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="font-mono text-sm font-semibold dark:bg-dark-600 bg-slate-100 px-2.5 py-1 rounded dark:text-slate-300 text-slate-500 shrink-0">${sub.code}</span>
+                            <span class="truncate">${sub.title}</span>
+                        </div>
+                        <svg class="w-4 h-4 opacity-0 group-hover/sub:opacity-100 text-sky-500 shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 01-2-2"></path></svg>
+                    </li>
+                `;
+            });
+            html += '</ul>';
+            modalContent.innerHTML = html;
+
+            subsModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            subsModal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // --- Search Logic ---
+        function filterData(query) {
+            if (!query) return ataData;
+
+            const lowerQuery = query.toLowerCase();
+
+            return ataData.map(chapter => {
+                const chapterMatches =
+                    chapter.code.toLowerCase().includes(lowerQuery) ||
+                    chapter.title.toLowerCase().includes(lowerQuery);
+
+                const matchingSubs = chapter.subs.filter(sub =>
+                    sub.code.toLowerCase().includes(lowerQuery) ||
+                    sub.title.toLowerCase().includes(lowerQuery)
+                );
+
+                if (chapterMatches) {
+                    return chapter;
+                } else if (matchingSubs.length > 0) {
+                    return { ...chapter, subs: matchingSubs };
+                }
+                return null;
+            }).filter(item => item !== null);
+        }
+
+        searchInput.addEventListener('input', (e) => {
+            const relevantData = filterData(e.target.value);
+            renderData(relevantData);
+        });
+
+        // Slash to focus
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '/' && document.activeElement !== searchInput) {
+                e.preventDefault();
+                searchInput.focus();
+            }
+        });
+
+        // --- Toast & Copy Logic ---
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast();
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        function copyWithFlash(element, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Add flash effect
+                element.classList.add('copy-flash');
+                setTimeout(() => {
+                    element.classList.remove('copy-flash');
+                }, 500);
+                showToast();
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        let toastTimeout;
+        function showToast() {
+            toast.classList.remove('opacity-0', 'translate-y-2');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-2');
+            }, 1500);
+        }
+
+        // --- Theme Toggle ---
+        themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        });
+
+        // Load saved theme
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+        }
+
+        // Initial Render
+        renderData(ataData);
+
+    </script>
+</body>
+
+</html>
