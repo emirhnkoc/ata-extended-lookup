@@ -1,6 +1,6 @@
 # ATA Extended Lookup Tool
 
-A modern, high-performance, and minimalist web-based lookup tool designed for aircraft maintenance technicians. This tool provides instant access to ATA (Air Transport Association) chapters and their detailed subsystems.
+A modern, high-performance, and minimalist web-based lookup tool designed for aircraft maintenance technicians. This tool provides instant access to ATA (Air Transport Association) chapters and their subsystems.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![PWA](https://img.shields.io/badge/PWA-Supported-673ab7.svg)
@@ -32,20 +32,6 @@ A modern, high-performance, and minimalist web-based lookup tool designed for ai
 - **Google Fonts** (Inter & JetBrains Mono)
 - **Service Workers** for offline functionality
 
-## 📖 ATA Data Structure
-
-The application contains a comprehensive hierarchy of ATA chapters including:
-- Aircraft General
-- Airframe Systems
-- Structure
-- Propeller/Rotor
-- Power Plant
-- Miscellaneous
-- Military/Peculiar
-
 ## 📝 License
 
 This project is open-source and available under the [MIT License](LICENSE).
-
----
-*Created by Emirhan Koç | Aircraft Maintenance and Repair Student*
