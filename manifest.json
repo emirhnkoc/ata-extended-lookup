@@ -1,0 +1,23 @@
+{
+    "name": "ATA Extended Lookup",
+    "short_name": "ATA Lookup",
+    "description": "A modern lookup tool for aircraft maintenance technicians to quickly find ATA codes and subsystems.",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#06080C",
+    "theme_color": "#0EA5E9",
+    "orientation": "any",
+    "icons": [
+        {
+            "src": "favicon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "utilities",
+        "productivity"
+    ],
+    "lang": "en"
+}
